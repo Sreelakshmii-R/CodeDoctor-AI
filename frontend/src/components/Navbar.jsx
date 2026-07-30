@@ -11,7 +11,7 @@ function Navbar() {
   async function loadNotifications() {
     try {
       const response = await fetch(
-        "http://localhost:8000/dashboard/activity"
+        `${import.meta.env.VITE_API_URL}/dashboard/activity`
       );
 
       const data = await response.json();
@@ -21,6 +21,7 @@ function Navbar() {
       console.error(error);
     }
   }
+
 
   loadNotifications();
 }, []);
