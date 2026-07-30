@@ -2,7 +2,7 @@
 
 AI-powered repository intelligence for code review, debugging, and security analysis.
 
-**Live Demo:** `https://code-doctor-ai-orcin.vercel.app/`
+**Live Demo:** `https://code-doctor-ai-orcin.vercel.app`
 
 **GitHub:** `https://github.com/Sreelakshmii-R/CodeDoctor-AI`
 
@@ -267,7 +267,7 @@ Never commit `.env` files, API keys, database passwords, or database dumps to Gi
 
 ### Frontend
 
-The React/Vite application is deployed on Vercel.
+The React/Vite application is deployed on **Vercel**.
 
 Production environment variable:
 
