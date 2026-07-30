@@ -51,7 +51,7 @@ Users can connect a GitHub repository, automatically clone it, run an AI-powered
 
 ### Repository Analysis
 
-<img width="360" height="300" alt="image" src="https://github.com/user-attachments/assets/1e2d5021-6447-49fb-811c-6cc4b49046f9" />
+<img width="500" height="300" alt="image" src="https://github.com/user-attachments/assets/1e2d5021-6447-49fb-811c-6cc4b49046f9" />
 
 
 ---
