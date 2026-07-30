@@ -13,6 +13,34 @@ router = APIRouter(
 )
 
 
+@router.get("/db-test")
+def db_test(db: Session = Depends(get_db)):
+
+    try:
+        repository_count = db.execute(
+            text("SELECT COUNT(*) FROM public.repositories")
+        ).scalar()
+
+        analysis_count = db.execute(
+            text("SELECT COUNT(*) FROM public.analyses")
+        ).scalar()
+
+        return {
+            "status": "ok",
+            "repositories": repository_count,
+            "analyses": analysis_count
+        }
+
+    except Exception as error:
+        import traceback
+
+        traceback.print_exc()
+
+        return {
+            "status": "error",
+            "error": str(error)
+        }
+
 @router.get("/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):
 
