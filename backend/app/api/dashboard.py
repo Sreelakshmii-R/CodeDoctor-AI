@@ -16,120 +16,100 @@ router = APIRouter(
 @router.get("/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):
 
-    # Total repositories
-    repositories = db.execute(
-        text("""
-            SELECT COUNT(*)
-            FROM repositories
-        """)
-    ).scalar() or 0
+    try:
+        repositories = db.execute(
+            text("""
+                SELECT COUNT(*)
+                FROM public.repositories
+            """)
+        ).scalar() or 0
 
+        analyses = db.execute(
+            text("""
+                SELECT COUNT(*)
+                FROM public.analyses
+            """)
+        ).scalar() or 0
 
-    # Total actual AI analyses
-    analyses = db.execute(
-        text("""
-            SELECT COUNT(*)
-            FROM analyses
-        """)
-    ).scalar() or 0
+        latest_analyses = db.execute(
+            text("""
+                SELECT DISTINCT ON (repository_id)
+                    repository_id,
+                    report,
+                    created_at
+                FROM public.analyses
+                ORDER BY repository_id, created_at DESC
+            """)
+        ).fetchall()
 
+        scores = []
+        issues = 0
 
-    # Get the latest analysis for each repository
-    latest_analyses = db.execute(
-        text("""
-            SELECT DISTINCT ON (repository_id)
-                repository_id,
+        for analysis in latest_analyses:
+
+            report = analysis.report or ""
+
+            score_match = re.search(
+                r"score of (\d+) out of 100",
                 report,
-                created_at
-            FROM analyses
-            ORDER BY repository_id, created_at DESC
-        """)
-    ).fetchall()
-
-
-    scores = []
-    issues = 0
-
-
-    for analysis in latest_analyses:
-
-        report = analysis.report or ""
-
-
-        # Extract overall AI score
-        score_match = re.search(
-            r"score of (\d+) out of 100",
-            report,
-            re.IGNORECASE
-        )
-
-
-        if score_match:
-            scores.append(
-                int(score_match.group(1))
+                re.IGNORECASE
             )
 
+            if score_match:
+                scores.append(int(score_match.group(1)))
 
-        # Count numbered findings in the
-        # Bugs & Potential Errors section
-        bugs_match = re.search(
-            r"# Bugs & Potential Errors(.*?)(?=# Security Vulnerabilities|# Performance Issues|# Code Quality Review|# Best Practice Suggestions|# Overall Score|$)",
-            report,
-            re.IGNORECASE | re.DOTALL
-        )
+            bugs_match = re.search(
+                r"# Bugs & Potential Errors(.*?)(?=# Security Vulnerabilities|# Performance Issues|# Code Quality Review|# Best Practice Suggestions|# Overall Score|$)",
+                report,
+                re.IGNORECASE | re.DOTALL
+            )
 
-
-        if bugs_match:
-
-            bugs_section = bugs_match.group(1)
-
-            issues += len(
-                re.findall(
-                    r"^\s*\d+\.",
-                    bugs_section,
-                    re.MULTILINE
+            if bugs_match:
+                issues += len(
+                    re.findall(
+                        r"^\s*\d+\.",
+                        bugs_match.group(1),
+                        re.MULTILINE
+                    )
                 )
+
+            security_match = re.search(
+                r"# Security Vulnerabilities(.*?)(?=# Performance Issues|# Code Quality Review|# Best Practice Suggestions|# Overall Score|$)",
+                report,
+                re.IGNORECASE | re.DOTALL
             )
 
-
-        # Count numbered findings in the
-        # Security Vulnerabilities section
-        security_match = re.search(
-            r"# Security Vulnerabilities(.*?)(?=# Performance Issues|# Code Quality Review|# Best Practice Suggestions|# Overall Score|$)",
-            report,
-            re.IGNORECASE | re.DOTALL
-        )
-
-
-        if security_match:
-
-            security_section = security_match.group(1)
-
-            issues += len(
-                re.findall(
-                    r"^\s*\d+\.",
-                    security_section,
-                    re.MULTILINE
+            if security_match:
+                issues += len(
+                    re.findall(
+                        r"^\s*\d+\.",
+                        security_match.group(1),
+                        re.MULTILINE
+                    )
                 )
-            )
 
-
-    # Average latest AI score
-    if scores:
-        security_score = round(
-            sum(scores) / len(scores)
+        security_score = (
+            round(sum(scores) / len(scores))
+            if scores
+            else 0
         )
-    else:
-        security_score = 0
 
+        return {
+            "repositories": repositories,
+            "analyses": analyses,
+            "issues": issues,
+            "security_score": security_score
+        }
 
-    return {
-        "repositories": repositories,
-        "analyses": analyses,
-        "issues": issues,
-        "security_score": security_score
-    }
+    except Exception as error:
+        import traceback
 
+        print("DASHBOARD STATS ERROR:")
+        traceback.print_exc()
+
+        raise error
+
+    
 @router.get("/activity")
 def get_recent_activity(db: Session = Depends(get_db)):
 
